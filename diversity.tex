@@ -3,7 +3,8 @@
 \newcommand{\sco}{{\tt scorecons}}
 \title{Scoring conservation through diversity of observed residues}
 \author{Andrew C.R.\ Martin}
-\date{28th October 2022}
+\date{28th October 2022\\
+Version~2 --- 29th October 2022}
 
 \begin{document}
 
@@ -28,18 +29,19 @@ encoded by any one of the appropriate codons).
 In a very simple way we could then calculate a conservation score as:
 \begin{equation}
   C = 1 - D
+\label{eqn:C1}
 \end{equation}
 where $D$ is the observed diversity, calculated as:
 \begin{equation}
-  D = 1 - \frac{o}{N_n}
+  D = \frac{o}{N_n}
 \label{eqn:D1}
 \end{equation}
 where $o$ is the number of unique amino acids observed at a given
 position ({\bfseries excluding} the native) and $N_n = |\mathbf M_n|$ is the
 number of unique mutated amino acids in $\mathbf M_n$ which is the set of
 possible mutant residues, starting from native amino acid $n$ (also
-excluding the native). This would give a value of 0 if all possible
-amino acids are seen and a value of 1 if no mutations are seen.
+excluding the native). This would give a value of 1 if all possible
+amino acids are seen and a value of 0 if no mutations are seen.
 
 However this does not consider similarity between the amino
 acids.  What we need is for conservative mutations to contribute less
@@ -54,7 +56,7 @@ is equal and maximal and set to $1$) to score the similarity.
 
 Consequently we replace Equation~\ref{eqn:D1} by:
 \begin{equation}
-  D = 1 - \frac{s_o}{N_n}
+  D = \frac{s_o}{N_n}
   \label{eqn:D2}
 \end{equation}
 where $s_o$ is defined as:
@@ -69,15 +71,16 @@ residues were native, then $s$ would be 0.0, $D$ would be 0.0 and $C$
 would be 1.0. (In practice, since we only look at the \emph{mutant}
 residues and ignore the native residue, $s$ would, in any case be $0.0$.)
 
-However, this equation needs to be normalized with respect to the native
-residue since the divisor ($N_n$) is the number of possible residues and
-doesn't take into account the range of similarities between the native
-residue and the ones to which it can be mutated (i.e.\ the minimum
-normalized PAM score for mutants of this residue).
+However, Equation~\ref{eqn:D2} needs to be normalized with respect to
+the native residue since the divisor ($N_n$) is simply the number of
+possible residues and doesn't take into account the range of
+similarities between the native residue and the ones to which it can
+be mutated (i.e.\ the minimum normalized PAM score for mutants of this
+residue).
 
 Consequently we replace Equation~\ref{eqn:D2} by:
 \begin{equation}
-  D = 1 - \frac{s_o}{t_p}
+  D = \frac{s_o}{t_p}
   \label{eqn:D3}
 \end{equation}
 where $t_p$ is defined as:
@@ -85,7 +88,8 @@ where $t_p$ is defined as:
   t_p = N_n \times \max_{m \in \mathbf M_n} (1 - P(n,m))
 \end{equation}
 
-Writing Equation~\ref{eqn:D3} out in full:
+\noindent Combining Equations~\ref{eqn:C1} and~\ref{eqn:D3}, and writing
+them out in full:
 \begin{equation}
   C = 1 - \frac{\sum_{m \in \mathbf M_o} (1 - P(n,m))}{N_n \times \max_{m \in \mathbf M_n} (1 - P(n,m))}
 \end{equation}
