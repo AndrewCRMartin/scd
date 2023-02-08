@@ -1,0 +1,104 @@
+\documentclass[a4paper]{article}
+
+\newcommand{\sco}{{\tt scorecons}}
+\title{Scoring conservation through diversity of observed residues}
+\author{Andrew C.R.\ Martin}
+\date{28th October 2022}
+
+\begin{document}
+
+\maketitle
+
+The problem is that we want to know how much diversity (or
+conservation) there is at a given position in a sequence from a huge
+set of data where most entries have the native amino acid. A simple
+conservation score (e.g.\ from \sco) doesn't work very well because
+the vast majority of the sequences being considered have the native
+residue and, therefore, it is always scored as highly conserved. I
+have already modified my implementation of \sco\ to allow this count
+to be capped, or for logs to be taken of the numbers of observations
+--- both of these help considerably.
+
+An alternative is just to look at the observed residues that are
+present and not consider the counts. I have already calculated the
+number of mutated residues possible for each native residue assuming a
+single base change (and also assuming that the native residue might be
+encoded by any one of the appropriate codons).
+
+In a very simple way we could then calculate a conservation score as:
+\begin{equation}
+  C = 1 - D
+\end{equation}
+where $D$ is the observed diversity, calculated as:
+\begin{equation}
+  D = 1 - \frac{o}{N_n}
+\label{eqn:D1}
+\end{equation}
+where $o$ is the number of unique amino acids observed at a given
+position ({\bfseries excluding} the native) and $N_n = |\mathbf M_n|$ is the
+number of unique mutated amino acids in $\mathbf M_n$ which is the set of
+possible mutant residues, starting from native amino acid $n$ (also
+excluding the native). This would give a value of 0 if all possible
+amino acids are seen and a value of 1 if no mutations are seen.
+
+However this does not consider similarity between the amino
+acids.  What we need is for conservative mutations to contribute less
+to the diversity.
+
+We can use normalized PAM scores\footnote{The method for doing this is
+  described in the Valdar \sco\ paper, but it is used by my
+  implementation of \sco\ and is present in the BiopLib data directory
+  as {\tt pet91.mat}, though the diagonal here is 10, so all values
+  would need to be divided by 10.} (where the diagonal of the matrix
+is equal and maximal and set to $1$) to score the similarity.
+
+Consequently we replace Equation~\ref{eqn:D1} by:
+\begin{equation}
+  D = 1 - \frac{s_o}{N_n}
+  \label{eqn:D2}
+\end{equation}
+where $s_o$ is defined as:
+\begin{equation}
+  s_o = \sum_{m \in \mathbf M_o} (1 - P(n,m))
+\end{equation}
+where $n$ is the native residue, $m$ is a mutant residue, $\mathbf M_o$ is
+the set of observed mutated residues for $n$ and $P(n,m)$ is the
+normalized PAM score for a mutation between $n$ and $m$. Given that
+$P(n,n)$ is, by definition, 1.0, this means that, if all observed
+residues were native, then $s$ would be 0.0, $D$ would be 0.0 and $C$
+would be 1.0. (In practice, since we only look at the \emph{mutant}
+residues and ignore the native residue, $s$ would, in any case be $0.0$.)
+
+However, this equation needs to be normalized with respect to the native
+residue since the divisor ($N_n$) is the number of possible residues and
+doesn't take into account the range of similarities between the native
+residue and the ones to which it can be mutated (i.e.\ the minimum
+normalized PAM score for mutants of this residue).
+
+Consequently we replace Equation~\ref{eqn:D2} by:
+\begin{equation}
+  D = 1 - \frac{s_o}{t_p}
+  \label{eqn:D3}
+\end{equation}
+where $t_p$ is defined as:
+\begin{equation}
+  t_p = N_n \times \max_{m \in \mathbf M_n} (1 - P(n,m))
+\end{equation}
+
+Writing Equation~\ref{eqn:D3} out in full:
+\begin{equation}
+  C = 1 - \frac{\sum_{m \in \mathbf M_o} (1 - P(n,m))}{N_n \times \max_{m \in \mathbf M_n} (1 - P(n,m))}
+\end{equation}
+where:
+\begin{itemize}
+\item $C$ is the calculated conservation score
+\item $n$ is the native mutant amino acid
+\item $m$ is a mutant amino acid
+\item $\mathbf M_o$ is the set of distinct observed mutant amino acids
+\item $P(n,m)$ is the normalized PAM matrix score for mutation $n$ to $m$
+\item $N_n$ is $|\mathbf M_n|$, the number of mutant amino acids possible with native residue $n$
+\item $\mathbf M_n$ is the set of possible mutant amino acids for native residue $n$
+\end{itemize}
+
+
+\end{document}
